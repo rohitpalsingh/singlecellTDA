@@ -1,6 +1,7 @@
 # singlecellTDA
 
-![PipeLine](https://github.com/rohitpalsingh/singlecellTDA/blob/main/TDAscPipeline.pdf?raw=true)
+![TDAscPipeline](https://user-images.githubusercontent.com/79603501/124172163-7e4ef800-da77-11eb-97db-ba3b2f08d786.png)
+)
 
 
 The Focus of the repository is to do the following before performing Downstream Analysis.
