@@ -8,7 +8,7 @@ The Focus of the repository is to do the following before performing Downstream 
 # Data Pre-Processing
 1.  Feature Selection
 2.  Dimensionality Reduction
-3.  Data Visulization
+3.  Data Visualization
 # Down Stream Analysis
 1.  Cell Group Annotation
 2.  Identifying Infered Trejectories through topomap/mapper/tomato. Identify Major Topological Change during different time course.
