@@ -17,15 +17,15 @@ void runLHF(pipePacket<nodeType>& wD, std::map<std::string, std::string>& args, 
 	auto lhflib = LHF<nodeType>();
 	auto rs = readInput();
 	
-	if(args["pipeline"] != "slidingwindow" && args["pipeline"] != "naivewindow" && args["mode"] != "mpi"){
+	//if(args["pipeline"] != "slidingwindow" && args["pipeline"] != "naivewindow" && args["mode"] != "mpi"){
 		//Read data from inputFile CSV
-		wD.inputData = rs.readCSV(args["inputFile"]);
+		wD.inputData = rs.readSingleCellCSV(args["inputFile"]);
 		wD.workData = wD.inputData;
-	}
+	//}
 
 	//If data was found in the inputFile
 	if(wD.inputData.size() > 0 || args["pipeline"] == "slidingwindow" || args["pipeline"] == "naivewindow" || args["mode"] == "mpi"){
-        	if(args["mode"] == "mpi"){
+      /*  	if(args["mode"] == "mpi"){
 
 			MPI_Init(&argc,&argv);
 			MPI_Comm_size(MPI_COMM_WORLD,&lhflib.nprocs);
@@ -43,9 +43,10 @@ void runLHF(pipePacket<nodeType>& wD, std::map<std::string, std::string>& args, 
 			lhflib.runPipeline(args, wD);
 			std::sort(wD.bettiTable.begin(), wD.bettiTable.end(), sortBettis());
 		} else {
-			lhflib.runPreprocessor(args, wD);
+			*/
+		//	lhflib.runPreprocessor(args, wD);
 			lhflib.runPipeline(args, wD);
-		}
+		//}
 
 	} else {
 		argParser::printUsage();

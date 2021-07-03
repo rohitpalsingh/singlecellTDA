@@ -118,7 +118,7 @@ void basePipe<nodeType>::outputData(pipePacket<nodeType> &inData){
 
 	for (auto a : inData.workData){
 		for (auto d : a){
-			file << std::to_string(d) << ",";
+			file << std::to_string(d.geneID) <<" "<<std::to_string(d.expression) << ",";
 		}
 		file << "\n";
 	}

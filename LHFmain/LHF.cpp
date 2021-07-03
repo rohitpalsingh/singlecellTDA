@@ -89,7 +89,7 @@ void LHF<nodeType>::runPipeline(std::map<std::string, std::string> args, pipePac
 
 	outputBettis(args, wD);
 }
-
+/*
 template<typename nodeType>
 void LHF<nodeType>::runPreprocessor(std::map<std::string, std::string>& args, pipePacket<nodeType>&wD){
 	//Start with the preprocessing function, if enabled
@@ -748,7 +748,6 @@ std::vector<bettiBoundaryTableEntry> LHF<nodeType>::processDistributedWrapper(st
 
 
 
-
 extern "C"{
 
 	void pyRunWrapper(const int argc, char *argv, const double *pointCloud){
@@ -1092,4 +1091,4 @@ extern "C"{
 		return b;
 	}
 }
-
+*/

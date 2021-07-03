@@ -790,6 +790,44 @@ double utils::vectors_distance(const std::vector<double>& a, const std::vector<d
 	return sqrt(std::accumulate(temp.begin(), temp.end(), 0.0));
 }
 
+double utils::vectors_distanceSparse(const std::vector<dataNode>& a,const std::vector<dataNode>& b){
+	auto itra = a.begin(), itrb = b.begin();
+	
+	std::vector<double> temp;
+	
+	if(b.size() == 0)
+		return 0;
+		
+	while(itra!=a.end() || itrb!=b.end()){
+		if(itra->geneID == itrb->geneID){
+			temp.push_back(pow((itra->expression -itrb->expression),2));
+			itra++;
+			itrb++;
+		
+		}else if(itra->geneID < itrb->geneID){
+		   temp.push_back(pow(itra->expression,2));
+		   itra++;
+		}
+		else{
+			temp.push_back(pow(itrb->expression,2));
+			itrb++;
+		}
+	
+	}
+	while(itra!=a.end()){
+		temp.push_back(pow(itra->expression,2));
+		itra++;
+	}
+	
+	while(itrb!=b.end()){
+	    temp.push_back(pow(itrb->expression,2));
+		itrb++;
+	}
+ 
+	return sqrt(std::accumulate(temp.begin(), temp.end(), 0.0));
+}
+
+
 std::vector<unsigned> utils::setIntersect(std::vector<unsigned> v1, std::vector<unsigned> v2, bool isSorted){
 	std::vector<unsigned> ret;
 

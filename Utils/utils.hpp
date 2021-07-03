@@ -6,6 +6,12 @@
 #include <map>
 #include "../Preprocessing/kdTree.hpp"
 
+struct dataNode{
+	unsigned geneID;
+	double expression;
+	dataNode(unsigned gene, double expres) : geneID(gene), expression(expres) {}
+
+};
 
 // Simplex Node Structure
 struct simplexNode{
@@ -101,6 +107,8 @@ class utils {
 	static void print1DVector(const std::vector<double>&);
 	static double vectors_distance(const double&, const double&);
 	static double vectors_distance(const std::vector<double>&, const std::vector<double>&);
+	static double vectors_distanceSparse(const std::vector<dataNode>& a,const std::vector<dataNode>& b);
+
 	static void print1DSet(const std::pair<std::set<unsigned>, double>&);
 	static std::set<unsigned> setXOR(std::set<unsigned>&, std::set<unsigned>&);
 	static std::set<unsigned> setIntersect(std::set<unsigned>, std::set<unsigned>, bool isSorted);

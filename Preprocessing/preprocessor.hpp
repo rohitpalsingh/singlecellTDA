@@ -22,5 +22,7 @@ class preprocessor {
     virtual void outputData(pipePacket<nodeType>&);
     virtual void outputData(std::vector<unsigned>);
     virtual void outputData(std::vector<std::vector<double>>);
+    virtual void outputData(std::vector<std::vector<dataNode>> data);
+
     virtual bool configPreprocessor(std::map<std::string, std::string> &configMap);
 };

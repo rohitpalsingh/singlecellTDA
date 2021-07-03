@@ -37,7 +37,7 @@ void distMatrixPipe<nodeType>::runPipe(pipePacket<nodeType> &inData){
 		//Grab a second vector to compare to 
 		for(unsigned j = i+1; j < inData.workData.size(); j++){
 			//Calculate vector distance 
-			inData.distMatrix[i][j] = this->ut.vectors_distance(inData.workData[i],inData.workData[j]);
+			inData.distMatrix[i][j] = this->ut.vectors_distanceSparse(inData.workData[i],inData.workData[j]);
 		}
 	}
 
@@ -46,9 +46,9 @@ void distMatrixPipe<nodeType>::runPipe(pipePacket<nodeType> &inData){
 		for(unsigned j = 0; j < inData.workData.size(); j++) r_i = std::max(r_i, inData.distMatrix[std::min(i, j)][std::max(i, j)]);
 		enclosingRadius = std::min(enclosingRadius, r_i);
 	}
-	if(inData.complex->complexType == "alphaComplex" && (this->betaMode == "lune" || this->betaMode == "circle"))
+/*	if(inData.complex->complexType == "alphaComplex" && (this->betaMode == "lune" || this->betaMode == "circle"))
 				inData.incidenceMatrix = this->ut.betaNeighbors(inData.inputData,beta,betaMode);
-
+*/
 	inData.complex->setDistanceMatrix(&inData.distMatrix);
 	inData.complex->setEnclosingRadius(enclosingRadius);
 	inData.complex->setIncidenceMatrix(&inData.incidenceMatrix);

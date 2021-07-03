@@ -121,7 +121,22 @@ void preprocessor<nodeType>::outputData(pipePacket<nodeType> &data){
 	
 	
 }
+template<typename nodeType>
 
+void preprocessor<nodeType>::outputData(std::vector<std::vector<dataNode>> data){
+	std::ofstream file;
+	file.open("output/" + procName + "_centroid_output.csv");
+	
+	for (auto a : data){
+		for (auto d : a){
+			file << std::to_string(d.geneID) <<" "<< std::to_string(d.expression)<< ",";
+		}
+		file << "\n";
+	}
+	
+	file.close();
+	return;
+}
 // outputData -> used for tracking each stage of the pipeline's data output without runtime
 template<typename nodeType>
 void preprocessor<nodeType>::outputData(std::vector<std::vector<double>> data){

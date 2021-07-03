@@ -1,4 +1,3 @@
-mmoustd::vector<std::string> time;
     /*
  * readInput hpp + cpp protoype and define a class for reading input into
  * the LFH system (https://github.com/wilseypa/LFH). The class is designed
@@ -28,6 +27,48 @@ readInput::readInput(){
 //
 // TODO: Check for invalid vector lengths (i.e. <3,3,3> and <4,4,4,4> should not exist)
 // TODO: Handle if there is a comma at the end of the line (i.e. "5,5,5," should be <5,5,5>)
+
+std::vector<std::vector<dataNode>> readInput::readSingleCellCSV(std::string filename){
+	std::string matrixfilename = filename + "_soupX.csv";
+	std::string matrixmetadata = filename + "_MetaData.csv";
+	std::string matrixfeatures = filename + "_Features_Var.csv";
+	std::vector<std::vector<dataNode>> result;
+	
+	std::ifstream file1(matrixfilename);
+	std::ifstream file2(matrixmetadata);
+	std::ifstream file3(matrixfeatures);
+	
+	if(!file1){
+		std::cout << "Failed to open data file: " << matrixfilename << std::endl;
+		return result;
+	}
+	
+	if(!file2){
+		std::cout << "Failed to open metadata file: " << matrixmetadata << std::endl;
+		return result;
+	}
+	
+	if(!file3){
+		std::cout << "Failed to open features file: " << matrixfeatures << std::endl;
+		return result;
+	}
+	// We are going to iterate through each line of the file until we reach the end
+	int count = 0;
+	while(!file1.eof()){
+		std::string line;			// Temporary (current) line
+		std::vector<dataNode> tmp;	// Temporary (current) vector
+		getline(file1, line);		// Read the next line from file
+		if(count !=0)
+			if(parseDoubleSparseVector(line, tmp)){
+				result.push_back(tmp);
+			}
+	    count++;	
+	}
+	
+	return result;
+}
+
+
 std::vector<std::vector<double>> readInput::readCSV(std::string filename){
 	std::vector<std::vector<double>> result;
 	
@@ -52,6 +93,40 @@ std::vector<std::vector<double>> readInput::readCSV(std::string filename){
 	return result;
 }
 
+
+bool readInput::parseDoubleSparseVector(std::string line, std::vector<dataNode> &row){
+	std::size_t pos = std::string::npos;
+	unsigned count = 0;
+	// Replace whitespace in the current line
+	line = std::regex_replace(line, std::regex(" "), "");
+	// Check if the line has a length (is not a blank line)
+	if(line.size() > 1){
+			
+		// Iterate through each comma of the csv
+		while((pos = line.find_first_of(",")) != std::string::npos){
+			double num = std::stod(line.substr(0,pos));
+			// Push the value found before the comma, remove from the line
+			if(num !=0)
+				row.push_back(dataNode(count,num));
+				std::cout<<count<<" "<<num;
+				int k;
+				std::cin>>k;
+			line.erase(0,pos + 1);
+			count++;		
+		}
+		// Get the last value of the line
+		if(line.size() > 0){
+			double num = std::stod(line.substr(0,pos));
+			// Push the value found before the comma, remove from the line
+			if(num !=0)
+				row.push_back(dataNode(count,num));
+		}
+	} else
+		return false;
+	
+	return true;
+	
+}
 
 bool readInput::parseDoubleVector(std::string line, std::vector<double> &row){
 	std::size_t pos = std::string::npos;
