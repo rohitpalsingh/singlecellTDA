@@ -108,9 +108,7 @@ bool readInput::parseDoubleSparseVector(std::string line, std::vector<dataNode> 
 			// Push the value found before the comma, remove from the line
 			if(num !=0)
 				row.push_back(dataNode(count,num));
-				std::cout<<count<<" "<<num;
-				int k;
-				std::cin>>k;
+		
 			line.erase(0,pos + 1);
 			count++;		
 		}
