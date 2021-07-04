@@ -17,32 +17,34 @@
 #include <algorithm>
 #include "distMatrixPipe.hpp"
 #include "utils.hpp"
-#include <fstream>
+#include "readInput.hpp"
 // basePipe constructor
-template<typename nodeType>
-distMatrixPipe<nodeType>::distMatrixPipe(){
-	this->pipeType = "DistMatrix";
+distMatrixPipe::distMatrixPipe(){
+	pipeType = "DistMatrix";
 	return;
 }
 
 // runPipe -> Run the configured functions of this pipeline segment
-template<typename nodeType>
-void distMatrixPipe<nodeType>::runPipe(pipePacket<nodeType> &inData){
-    std::ofstream file("mouseDM.csv");
+void distMatrixPipe::runPipe(pipePacket &inData){
+	 std::ofstream file("mouseDMafterread.csv");
 	//Store our distance matrix
+	
 	if(inData.distMatrix.size() > 0) inData.distMatrix.clear();
 	inData.distMatrix.resize(inData.workData.size(), std::vector<double>(inData.workData.size(),0));
+	//auto rs = readInput();
+	//inData.distMatrix = rs.readMAT("mouseDM.csv");
 	//Iterate through each vector, create lower
-	for(unsigned i = 0; i < inData.workData.size(); i++){
+	for(unsigned i = 0; i < inData.inputData.size(); i++){
 		//Grab a second vector to compare to 
-		for(unsigned j = 0; j < inData.workData.size(); j++){
+		for(unsigned j = 0; j < inData.inputData.size(); j++){
 			//Calculate vector distance 
 			if(j>i){
 			    double distance = this->ut.vectors_distanceSparse(inData.workData[i],inData.workData[j]);
-				inData.distMatrix[i][j] = distance;
-				file<<distance<<" ";
+
+				  inData.distMatrix[i][j] = distance;
+				  file<<distance<<" ";
 			}else
-				file<<0<<" ";
+	     		file<<0<<" ";
 				
 		}
 		file<<"\n";
@@ -68,46 +70,37 @@ void distMatrixPipe<nodeType>::runPipe(pipePacket<nodeType> &inData){
 }
 
 
+
 // configPipe -> configure the function settings of this pipeline segment
-template<typename nodeType>
-bool distMatrixPipe<nodeType>::configPipe(std::map<std::string, std::string> &configMap){
+bool distMatrixPipe::configPipe(std::map<std::string, std::string> &configMap){
 	std::string strDebug;
 	
 	auto pipe = configMap.find("debug");
 	if(pipe != configMap.end()){
-		this->debug = std::atoi(configMap["debug"].c_str());
+		debug = std::atoi(configMap["debug"].c_str());
 		strDebug = configMap["debug"];
 	}
 	pipe = configMap.find("outputFile");
 	if(pipe != configMap.end())
-		this->outputFile = configMap["outputFile"].c_str();
-		
-	pipe = configMap.find("beta");
-	if(pipe != configMap.end())
-		this->beta = std::atof(configMap["beta"].c_str());
+		outputFile = configMap["outputFile"].c_str();
 	
-	pipe = configMap.find("betaMode");
-	if(pipe != configMap.end())
-		this->betaMode = configMap["betaMode"].c_str();
-		
-	this->ut = utils(strDebug, this->outputFile);
+	ut = utils(strDebug, outputFile);
 	
 	pipe = configMap.find("epsilon");
 	if(pipe != configMap.end())
-		this->enclosingRadius = std::atof(configMap["epsilon"].c_str());
+		enclosingRadius = std::atof(configMap["epsilon"].c_str());
 	else return false;
 
-	this->configured = true;
-	this->ut.writeDebug("distMatrixPipe","Configured with parameters { eps: " + configMap["epsilon"] + " , debug: " + strDebug + ", outputFile: " + this->outputFile + " }");
+	configured = true;
+	ut.writeDebug("distMatrixPipe","Configured with parameters { eps: " + configMap["epsilon"] + " , debug: " + strDebug + ", outputFile: " + outputFile + " }");
 	
 	return true;
 }
 
 // outputData -> used for tracking each stage of the pipeline's data output without runtime
-template<typename nodeType>
-void distMatrixPipe<nodeType>::outputData(pipePacket<nodeType> &inData){
+void distMatrixPipe::outputData(pipePacket &inData){
 	std::ofstream file;
-	file.open("output/" + this->pipeType + "_output.csv");
+	file.open("output/" + pipeType + "_output.csv");
 	
 	for(std::vector<double> a : inData.distMatrix){
 		for(auto d : a){
@@ -120,7 +113,3 @@ void distMatrixPipe<nodeType>::outputData(pipePacket<nodeType> &inData){
 	return;
 }
 
-//Explicit Template Class Instantiation
-template class distMatrixPipe<simplexNode>;
-template class distMatrixPipe<alphaNode>;
-template class distMatrixPipe<witnessNode>;

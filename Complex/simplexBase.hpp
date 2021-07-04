@@ -9,48 +9,34 @@
 
 // Header file for simplexBase class - see simplexTree.cpp for descriptions
 
-template <typename nodeType>
-struct cmpByWeight{
-	bool operator()(nodeType a, nodeType b) const{
-		if(a->weight == b->weight){ //If the simplices have the same weight, sort by reverse lexicographic order for fastPersistence
-			auto itA = a->simplex.rbegin(), itB = b->simplex.rbegin();
-			while(itA != a->simplex.rend()){
-				if(*itA != *itB) return *itA > *itB;
-				++itA; ++itB;
-			}
-			return false;
-		} else{
-			return a->weight < b->weight;
-		}
-	}
-};
 
-
-template <class nodeType>
 class simplexBase {
   private:
-  
   public:
-	typedef std::shared_ptr<nodeType> templateNode_P;
-	std::vector<std::set<templateNode_P, cmpByWeight<templateNode_P>>> simplexList;		//Holds ordered list of simplices in each dimension
+	std::vector<std::vector<std::set<simplexNode_P, cmpByWeight>>> simplexList;		//Holds ordered list of simplices in each dimension
+															// Thinking to implement a distributed version of simplex List across cluster nodes to increase efficiency.
+															// We can always store data structures accross different cluster nodes, with function defined to yield similar results.
+															// Such structures are used to maintain huge data with centralized node to manage cohrence between diffrent storage nodes.
+																//Needs to sort by the weight for insertion
+
 	unsigned simplexOffset = 0;
 
-	
 	long long nodeCount = 0;					//Total number of nodes stored
 	long long indexCounter;						//Current insertion index
 
 	utils ut;									//Utilities functions
 	std::string simplexType = "simplexBase";	//Complex Type Identifier
-	std::string complexType = "";
 	std::string simplicialComplex = "";
-	templateNode_P root;							//Root of the simplexNode tree (if applicable)
-	templateNode_P head;							//Root of the simplexNode tree (if applicable)
+	simplexNode_P root;							//Root of the simplexNode tree (if applicable)
+	simplexNode_P head;							//Root of the simplexNode tree (if applicable)
+	
+												// Also a similar implementaiton for simplex Tree
 
 	double maxEpsilon;							//Maximum epsilon, loaded from configuration
 	int maxDimension;							//Maximum dimension, loaded from configuration
 	double alphaFilterationValue;						//alpha FilterationValue for alpha Complex
 	std::vector<std::vector<double>>* distMatrix;	//Pointer to distance matrix for current complex
-    std::vector<std::vector<bool>>* incidenceMatrix;
+
 
 	//For sliding window implementation, tracks the current vectors inserted into the window
 	//		Note - these point to the d0 simplexNodes; index, weight, etc. can be obtained
@@ -69,8 +55,6 @@ class simplexBase {
 	//Configurations of the complex
 	void setConfig(std::map<std::string, std::string>&);
 	void setDistanceMatrix(std::vector<std::vector<double>>* _distMatrix);
-	void setIncidenceMatrix(std::vector<std::vector<bool>>* _incidenceMatrix);
-
 	void setEnclosingRadius(double);
 	static simplexBase* newSimplex(const std::string &, std::map<std::string, std::string>&);
 
@@ -93,22 +77,24 @@ class simplexBase {
 	virtual void prepareCofacets(int);
 	virtual void prepareFacets(int);
 
-	virtual std::vector<templateNode_P> getAllCofacets(const std::set<unsigned>&, double, const std::unordered_map<templateNode_P, templateNode_P>&, bool);
-	virtual std::vector<nodeType*> getAllCofacets(templateNode_P, const std::unordered_map<long long, templateNode_P>&, bool);
-	virtual std::vector<nodeType*> getAllCofacets(templateNode_P);
-	virtual std::vector<templateNode_P> getAllDelaunayCofacets(templateNode_P);
-	virtual std::vector<templateNode_P> getAllCofacets(const std::set<unsigned>&);
-	virtual std::vector<nodeType*> getAllFacets(nodeType*);
-	virtual std::vector<nodeType*> getAllFacets(templateNode_P);
-	virtual std::vector<templateNode_P> getAllFacets_P(templateNode_P);
+	virtual std::vector<simplexNode_P> getAllCofacets(const std::set<unsigned>&, double, const std::unordered_map<simplexNode_P, simplexNode_P>&, bool);
+	virtual std::vector<simplexNode*> getAllCofacets(simplexNode_P, const std::unordered_map<long long, simplexNode_P>&, bool);
+	virtual std::vector<simplexNode*> getAllCofacets(simplexNode_P);
+	virtual std::vector<simplexNode_P> getAllDelaunayCofacets(simplexNode_P);
+	virtual std::vector<simplexNode_P> getAllCofacets(const std::set<unsigned>&);
+	virtual std::vector<simplexNode*> getAllFacets(simplexNode*);
+	virtual std::vector<simplexNode*> getAllFacets(simplexNode_P);
+	virtual std::vector<simplexNode_P> getAllFacets_P(simplexNode_P);
 
 
-	virtual std::set<templateNode_P, cmpByWeight<templateNode_P>> getDimEdges(int);
-	virtual std::vector<std::set<templateNode_P, cmpByWeight<templateNode_P>>> getAllEdges();
-	virtual std::vector<templateNode_P> expandDimension(std::vector<templateNode_P> edges);
+	virtual std::vector<std::set<simplexNode_P, cmpByWeight>> getDimEdges(int);
+	virtual std::vector<std::vector<std::set<simplexNode_P, cmpByWeight>>> getAllEdges();
+	virtual std::vector<simplexNode_P> expandDimension(std::vector<simplexNode_P> edges);
+	virtual void buildAlphaComplex(std::vector<std::vector<int>> dsimplexmesh, int npts,std::vector<std::vector<double>> inputData);
+	virtual void graphInducedComplex(int dim,std::vector<std::vector<double>> inputData,double beta);
 
 	virtual void expandDimensions(int);
-	//virtual void reduceComplex();
+	virtual void reduceComplex();
 	virtual ~simplexBase();
 	virtual void outputComplex();
 };

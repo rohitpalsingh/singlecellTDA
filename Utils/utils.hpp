@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 #include <map>
-#include "../Preprocessing/kdTree.hpp"
+
 
 struct dataNode{
 	unsigned geneID;
@@ -12,20 +12,8 @@ struct dataNode{
 	dataNode(unsigned gene, double expres) : geneID(gene), expression(expres) {}
 
 };
-
-// Simplex Node Structure
+// Header file for utils class - see utils.cpp for descriptions
 struct simplexNode{
-	unsigned index;
-	long long hash = -1;
-	
-	std::set<unsigned> simplex = {};
-	double weight = 0;
-	simplexNode(){}
-	simplexNode(std::set<unsigned> simp, double wt) : simplex(simp), weight(wt) {}
-};
-
-// Alpha Node Structure
-struct alphaNode{
 	unsigned index;
 	long long hash = -1;
 	
@@ -38,23 +26,27 @@ struct alphaNode{
     std::vector<double> hpcoff; // cofficient of simplex hyperplane
 	std::vector<double> circumCenter;
 	std::vector<std::vector<double>> betaCenters;
-	alphaNode(){}
-	alphaNode(std::set<unsigned> simp, double wt) : simplex(simp), weight(wt) {}
+	simplexNode(){}
+	simplexNode(std::set<unsigned> simp, double wt) : simplex(simp), weight(wt) {}
 };
 
-// Witness Node Structure
-struct witnessNode{
-	unsigned index;
-	long long hash = -1;
-	
-	std::set<unsigned> witnessPts;
-	std::vector<double> landmarkPt;
-	
-	std::set<unsigned> simplex = {};
-	double weight = 0;
-	witnessNode(){}
-	witnessNode(std::set<unsigned> simp, double wt) : simplex(simp), weight(wt) {}
+typedef std::shared_ptr<simplexNode> simplexNode_P;
+
+struct cmpByWeight{
+	bool operator()(simplexNode_P a, simplexNode_P b) const{
+		if(a->weight == b->weight){ //If the simplices have the same weight, sort by reverse lexicographic order for fastPersistence
+			auto itA = a->simplex.rbegin(), itB = b->simplex.rbegin();
+			while(itA != a->simplex.rend()){
+				if(*itA != *itB) return *itA > *itB;
+				++itA; ++itB;
+			}
+			return false;
+		} else{
+			return a->weight < b->weight;
+		}
+	}
 };
+
 
 struct bettiBoundaryTableEntry{
 	unsigned bettiDim;
@@ -93,13 +85,8 @@ class utils {
 	static std::vector<std::vector<std::vector<double>>> separateBoundaryPartitions(std::vector<std::set<unsigned>>, std::vector<std::vector<double>>, std::vector<unsigned>);
 	static std::pair<std::vector<std::vector<unsigned>>, std::vector<std::vector<std::vector<double>>>> separatePartitions(double, std::vector<std::vector<double>>, std::vector<std::vector<double>>, std::vector<unsigned>);
 	// void extractBoundaryPoints(std::vector<bettiBoundaryTableEntry>&);
-	
-	template <typename T>
-	std::set<unsigned> extractBoundaryPoints(std::vector<std::shared_ptr<T>>);
-	
-	template <typename T>
-	std::set<unsigned> extractBoundaryPoints(std::vector<T*>);
-	
+	static std::set<unsigned> extractBoundaryPoints(std::vector<simplexNode_P>);
+	static std::set<unsigned> extractBoundaryPoints(std::vector<simplexNode*>);
 	static std::vector<bettiBoundaryTableEntry> mapPartitionIndexing(std::vector<unsigned>, std::vector<bettiBoundaryTableEntry>);
 	static void print2DVector(const std::vector<std::vector<unsigned>>&);
 	static void print1DVector(const std::vector<unsigned>&);
@@ -139,8 +126,6 @@ class utils {
     static std::vector<std::vector<double>> betaCentersCalculation(std::vector<double> hpcoff, double beta, double circumRadius,std::vector<double> circumCenter);
 	static double simplexVolume(std::set<unsigned> simplex,std::vector<std::vector<double>>* distMatrix,int dd);
 	static double simplexVolume(std::vector<std::vector<double>>mat);
-    
-    static std::vector<std::vector<bool>> betaNeighbors(std::vector<std::vector<double>> &,double beta,std::string betaMode);
 
 	static std::vector<double> serialize(std::vector<std::vector<double>>& );
 	static std::vector<std::vector<double>> deserialize(std::vector<double> , unsigned);

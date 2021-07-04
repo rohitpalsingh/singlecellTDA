@@ -4,14 +4,13 @@
 #include <math.h>
 #include <algorithm>
 #include "simplexArrayList.hpp"
-#include <fstream>
+#include "../Preprocessing/kdTree.hpp"
 
 // simplexArrayList constructor, currently no needed information for the class constructor
-template<typename nodeType>
-simplexArrayList<nodeType>::simplexArrayList(double maxE, double maxD) : bin(0,0) {
-	this->simplexType = "simplexArrayList";
-	this->maxEpsilon = maxE;
-	this->maxDimension = maxD;
+simplexArrayList::simplexArrayList(double maxE, double maxD) : bin(0,0) {
+	simplexType = "simplexArrayList";
+	maxEpsilon = maxE;
+	maxDimension = maxD;
 }
 
 binomialTable::binomialTable(unsigned n, unsigned k) : v(n+1, std::vector<long long>(k+1, 0)){ //Fast computation of binomials with precomputed table
@@ -32,21 +31,19 @@ long long binomialTable::binom(unsigned n, unsigned k){ //Return binomial coeffi
 }
 
 //Hash the set by converting to a remapped index
-template<typename nodeType>
-long long simplexArrayList<nodeType>::simplexHash(const std::set<unsigned>& simplex){
+long long simplexArrayList::simplexHash(const std::set<unsigned>& simplex){
 	long long simplexIndex = 0;
 	unsigned i = 0;
 	auto it = simplex.begin();
 	while(it != simplex.end()){
-		simplexIndex += bin.binom(*it - this->simplexOffset, ++i); ///TODO - FIX OFFSET
+		simplexIndex += bin.binom(*it - simplexOffset, ++i); ///TODO - FIX OFFSET
 		if(simplexIndex < 0) throw std::overflow_error("Binomial overflow");
 		++it;
 	}
 	return simplexIndex;
 }
 
-template<typename nodeType>
-unsigned simplexArrayList<nodeType>::maxVertex(long long simplexHash, unsigned high, unsigned low, unsigned k){
+unsigned simplexArrayList::maxVertex(long long simplexHash, unsigned high, unsigned low, unsigned k){
 	while(high > low){ //Binary search for the max vertex for this simplex
 		unsigned mid = (high + low)/2;
 		if(bin.binom(mid, k) <= simplexHash) low = mid + 1;
@@ -55,8 +52,7 @@ unsigned simplexArrayList<nodeType>::maxVertex(long long simplexHash, unsigned h
 	return high - 1;
 }
 
-template<typename nodeType>
-std::set<unsigned> simplexArrayList<nodeType>::getVertices(long long simplexHash, int dim, unsigned n){
+std::set<unsigned> simplexArrayList::getVertices(long long simplexHash, int dim, unsigned n){
 	std::set<unsigned> v;
 	for(unsigned k = dim+1; k>0; k--){ //Get all vertices by repeated binary search for max vertex
 		n = maxVertex(simplexHash, n, k-1, k);
@@ -65,34 +61,31 @@ std::set<unsigned> simplexArrayList<nodeType>::getVertices(long long simplexHash
 	}
 	return v;
 }
-
-template<typename nodeType>
-void simplexArrayList<nodeType>::prepareCofacets(int dim){
+/*
+void simplexArrayList::prepareCofacets(int dim){
 	indexConverter.clear();
-	for(auto simplex : this->simplexList[dim+1]){
+	for(auto simplex : simplexList[dim+1]){
 		indexConverter.insert(std::make_pair(simplex->hash, simplex));
 	}
 }
 
-template<typename nodeType>
-void simplexArrayList<nodeType>::prepareFacets(int dim){
+void simplexArrayList::prepareFacets(int dim){
 	indexConverter.clear();
-	for(auto simplex : this->simplexList[dim-1]){
+	for(auto simplex : simplexList[dim-1]){
 		indexConverter.insert(std::make_pair(simplex->hash, simplex));
 	}
 }
 
-template<typename nodeType>
-std::vector<std::shared_ptr<nodeType>> simplexArrayList<nodeType>::getAllCofacets(const std::set<unsigned>& simplex, double simplexWeight, const std::unordered_map<std::shared_ptr<nodeType>, std::shared_ptr<nodeType>>& pivotPairs, bool checkEmergent){
-	std::vector<std::shared_ptr<nodeType>> ret;
-	int nPts = this->simplexList[0].size();
+std::vector<simplexNode_P> simplexArrayList::getAllCofacets(const std::set<unsigned>& simplex, double simplexWeight, const std::unordered_map<simplexNode_P, simplexNode_P>& pivotPairs, bool checkEmergent){
+	std::vector<simplexNode_P> ret;
+	int nPts = simplexList[0].size();
 	unsigned k = simplex.size() + 1;
 	std::set<unsigned>::reverse_iterator it = simplex.rbegin();
 	long long index = simplexHash(simplex);
 
 	//Try inserting other vertices into the simplex
 	for(unsigned i=nPts; i-- != 0; ){
-		if(it != simplex.rend() && i == *it - this->simplexOffset){ //Vertex i is already in the simplex
+		if(it != simplex.rend() && i == *it - simplexOffset){ //Vertex i is already in the simplex
 			//Now adding vertices less than i -> i is now the kth largest vertex in the simplex instead of the (k-1)th
 			index -= bin.binom(i, k-1);
 			index += bin.binom(i, k); //Recompute the index accordingly
@@ -119,23 +112,22 @@ std::vector<std::shared_ptr<nodeType>> simplexArrayList<nodeType>::getAllCofacet
 	return ret;
 }
 
-template<typename nodeType> 
-std::vector<nodeType*> simplexArrayList<nodeType>::getAllCofacets(std::shared_ptr<nodeType> simp, const std::unordered_map<long long, std::shared_ptr<nodeType>>& pivotPairs, bool checkEmergent, bool recordVertices, unsigned dim){
+std::vector<simplexNode*> simplexArrayList::getAllCofacets(simplexNode_P simp, const std::unordered_map<long long, simplexNode_P>& pivotPairs, bool checkEmergent, bool recordVertices, unsigned dim){
 	//Method builds out cofacets for incrementalPersistence
 
-	std::vector<nodeType*> ret;
+	std::vector<simplexNode*> ret;
 	std::set<unsigned> vertices;
 
 	if(recordVertices) vertices = simp->simplex;
-	else vertices = getVertices(simp->hash, dim, this->simplexList[0].size());
+	else vertices = getVertices(simp->hash, dim, simplexList[0].size());
 
 	unsigned k = vertices.size() + 1;
 	std::set<unsigned>::reverse_iterator it = vertices.rbegin();
 	long long index = simp->hash;
 
 	// Try inserting other vertices into the simplex
-	for(unsigned i = this->simplexList[0].size(); i-- != 0; ){
-		if(it != vertices.rend() && i == *it - this->simplexOffset){ //Vertex i is already in the simplex
+	for(unsigned i = simplexList[0].size(); i-- != 0; ){
+		if(it != vertices.rend() && i == *it - simplexOffset){ //Vertex i is already in the simplex
 			//Now adding vertices less than i -> i is now the kth largest vertex in the simplex instead of the (k-1)th
 			index -= bin.binom(i, k-1);
 			index += bin.binom(i, k); //Recompute the index accordingly
@@ -144,11 +136,11 @@ std::vector<nodeType*> simplexArrayList<nodeType>::getAllCofacets(std::shared_pt
 		} else{
 			double maxWeight = simp->weight;
 			for(auto pt : vertices){
-				maxWeight = std::max(maxWeight, (*this->distMatrix)[std::min(i, pt)][std::max(i, pt)]);
+				maxWeight = std::max(maxWeight, (*distMatrix)[std::min(i, pt)][std::max(i, pt)]);
 			}
 
-			if(maxWeight <= this->maxEpsilon){ //Valid simplex
-				nodeType* x = new nodeType();
+			if(maxWeight <= maxEpsilon){ //Valid simplex
+				simplexNode* x = new simplexNode();
 				if(recordVertices){
 					x->simplex = vertices;
 					x->simplex.insert(i);
@@ -168,18 +160,30 @@ std::vector<nodeType*> simplexArrayList<nodeType>::getAllCofacets(std::shared_pt
 	return ret;
 }
 
-template<typename nodeType>
-std::vector<nodeType*> simplexArrayList<nodeType>::getAllCofacets(std::shared_ptr<nodeType> simp){
-	return getAllCofacets(simp, std::unordered_map<long long, std::shared_ptr<nodeType>>(), false, true, 0);
+std::vector<simplexNode*> simplexArrayList::getAllCofacets(simplexNode_P simp){
+	return getAllCofacets(simp, std::unordered_map<long long, simplexNode_P>(), false, true, 0);
 }
 
-template<typename nodeType>
-std::vector<nodeType*> simplexArrayList<nodeType>::getAllFacets(nodeType* simp, bool recordVertices, unsigned dim){
-	std::vector<nodeType*> ret;
+std::vector<simplexNode_P> simplexArrayList::getAllDelaunayCofacets(simplexNode_P simp){
+	std::vector<simplexNode_P> ret;
+	unsigned dimension  = simp->simplex.size();
+        for(auto simplex : simplexList[dimension]){
+                std::vector<unsigned> :: iterator it;
+								std::vector<unsigned> v(simplex->simplex.size());
+								it = std::set_intersection(simp->simplex.begin(),simp->simplex.end(),simplex->simplex.begin(),simplex->simplex.end(),v.begin());
+								v.resize(it-v.begin());
+								if(v.size() == simp->simplex.size())
+									ret.push_back(simplex);
+				}
+	return ret;
+
+}
+std::vector<simplexNode*> simplexArrayList::getAllFacets(simplexNode* simp, bool recordVertices, unsigned dim){
+	std::vector<simplexNode*> ret;
 	std::set<unsigned> vertices;
 
 	if(recordVertices) vertices = simp->simplex;
-	else vertices = getVertices(simp->hash, dim + 1, this->simplexList[0].size());
+	else vertices = getVertices(simp->hash, dim + 1, simplexList[0].size());
 
 	long long index = simp->hash;
 	unsigned k = vertices.size();
@@ -192,11 +196,11 @@ std::vector<nodeType*> simplexArrayList<nodeType>::getAllFacets(nodeType* simp, 
 			if(*it == pt) continue;
 			for(auto it2 = it; ++it2 != vertices.end(); ){
 				if(*it2 == pt) continue;
-				maxWeight = std::max(maxWeight, (*this->distMatrix)[*it][*it2]);
+				maxWeight = std::max(maxWeight, (*distMatrix)[*it][*it2]);
 			}
 		}
 
-		nodeType* x = new nodeType();
+		simplexNode* x = new simplexNode();
 		x->weight = maxWeight;
 
 		if(recordVertices){
@@ -214,14 +218,12 @@ std::vector<nodeType*> simplexArrayList<nodeType>::getAllFacets(nodeType* simp, 
 	return ret;
 }
 
-template<typename nodeType>
-std::vector<nodeType*> simplexArrayList<nodeType>::getAllFacets(std::shared_ptr<nodeType> simp, bool recordVertices, unsigned dimension){
+std::vector<simplexNode*> simplexArrayList::getAllFacets(simplexNode_P simp, bool recordVertices, unsigned dimension){
 	return getAllFacets(simp.get(), recordVertices, dimension);
 }
 
-template<typename nodeType>
-std::vector<std::shared_ptr<nodeType>> simplexArrayList<nodeType>::getAllFacets_P(std::shared_ptr<nodeType> simp){
-	std::vector<std::shared_ptr<nodeType>> ret;
+std::vector<simplexNode_P> simplexArrayList::getAllFacets_P(simplexNode_P simp){
+	std::vector<simplexNode_P> ret;
 
 	long long index = simp->hash;
 	unsigned k = simp->simplex.size();
@@ -242,16 +244,15 @@ std::vector<std::shared_ptr<nodeType>> simplexArrayList<nodeType>::getAllFacets_
 	return ret;
 }
 
-template<typename nodeType>
-double simplexArrayList<nodeType>::getSize(){
+double simplexArrayList::getSize(){
 	//Calculate size of original data
 	size_t size = 0;
 
 	//Calculate size of edges
-	for(int i = 0; i < this->simplexList.size(); i++){
+	for(int i = 0; i < simplexList.size(); i++){
 
 		//Size is the ([# weighted graph entries] x [std::pair size]) + ([dimension of graph] * [vector entry size])
-		size += (this->simplexList[i].size() * sizeof((*this->simplexList[i].begin())));
+		size += (simplexList[i].size() * sizeof((*simplexList[i].begin())));
 	}
 
 	return size;
@@ -261,25 +262,27 @@ double simplexArrayList<nodeType>::getSize(){
 // Insert for simplexArrayList -> O((n+1)(n+2)/2) -> O(n^2)
 //		Sequence: 0 , 1 , 3 , 6 , 10 , 15
 //
-template<typename nodeType>
-void simplexArrayList<nodeType>::insert(){
+* */
+void simplexArrayList::insert(){
 	//If this is the first point inserted...
-	if(this->simplexList.size() == 0) this->simplexList.push_back({});
-
-	unsigned i = this->simplexList[0].size();
-
-	std::shared_ptr<nodeType> insNode = std::make_shared<nodeType>(nodeType({i}, 0.0));
+	if(this->simplexList.size() == 0) {
+		std::vector<std::set<simplexNode_P, cmpByWeight>> levelInserter;
+		this->simplexList.push_back(levelInserter);
+		if(this->simplexList[0].size() == 0) 
+			this->simplexList[0].push_back({});
+	}
+	unsigned i = simplexList[0][0].size();
+	simplexNode_P insNode = std::make_shared<simplexNode>(simplexNode({i}, 0.0));
 	insNode->hash = i;
-	this->simplexList[0].insert(insNode);
+	simplexList[0][0].insert(insNode);
 }
-
+/*
 // Search function to find a specific vector in the simplexArrayList
 // weightedGraph[d][v][p] dimension d stores vectors v of point elements p of simplexes formed
-template<typename nodeType>
-bool simplexArrayList<nodeType>::find(std::set<unsigned> vector){
-	if (this->simplexList.size() == 0) return false;
+bool simplexArrayList::find(std::set<unsigned> vector){
+	if (simplexList.size() == 0) return false;
 
-	for(auto simplexSetIter = this->simplexList[vector.size() - 1].begin(); simplexSetIter != this->simplexList[vector.size() - 1].end(); simplexSetIter++){
+	for(auto simplexSetIter = simplexList[vector.size() - 1].begin(); simplexSetIter != simplexList[vector.size() - 1].end(); simplexSetIter++){
 		if((*simplexSetIter)->simplex == vector){
 			return true;
 		}
@@ -289,10 +292,9 @@ bool simplexArrayList<nodeType>::find(std::set<unsigned> vector){
 
 // Search function to find a specific vector in the simplexArrayList
 // weightedGraph[d][v][p] dimension d stores vectors v of point elements p of simplexes formed
-template<typename nodeType>
-double simplexArrayList<nodeType>::findWeight(std::set<unsigned> vector){
+double simplexArrayList::findWeight(std::set<unsigned> vector){
 	//Search the weighted graph from the size of the vector
-	for(auto simplexSetIter = this->simplexList[vector.size() - 1].begin(); simplexSetIter != this->simplexList[vector.size() - 1].end(); simplexSetIter++){
+	for(auto simplexSetIter = simplexList[vector.size() - 1].begin(); simplexSetIter != simplexList[vector.size() - 1].end(); simplexSetIter++){
 		if((*simplexSetIter)->simplex == vector){
 			return (*simplexSetIter)->weight;
 		}
@@ -301,11 +303,10 @@ double simplexArrayList<nodeType>::findWeight(std::set<unsigned> vector){
 }
 
 // Output the total simplices stored in the simplical complex
-template<typename nodeType>
-int simplexArrayList<nodeType>::simplexCount(){
+int simplexArrayList::simplexCount(){
 	int simplexRet = 0;
 
-	for(auto a : this->simplexList){
+	for(auto a : simplexList){
 		simplexRet += a.size();
 	}
 
@@ -313,185 +314,429 @@ int simplexArrayList<nodeType>::simplexCount(){
 }
 
 // Output the total vertices stored in the simplical complex
-template<typename nodeType>
-int simplexArrayList<nodeType>::vertexCount(){
-	if(this->simplexList.size() == 0)
+int simplexArrayList::vertexCount(){
+	if(simplexList.size() == 0)
 		return 0;
-	return this->simplexList[0].size();
+	return simplexList[0].size();
 }
-
-template<typename nodeType>
-void simplexArrayList<nodeType>::initBinom(){
-	bin = binomialTable(this->simplexList[0].size(), this->maxDimension+1);
+*/
+void simplexArrayList::initBinom(){
+	bin = binomialTable(simplexList[0][0].size(), maxDimension+1);
 }
-
+/*
 // Expand the simplexArrayList to incorporate higher-level simplices
 //	-> O(dnk) -> where n is the number of points, d is the dimension, and k is the number of d-1 simplices
 //
 //	Do this by comparing each simplex with points to insert
 //
-template<typename nodeType>
-void simplexArrayList<nodeType>::expandDimensions(int dim){
+void simplexArrayList::expandDimensions(int dim){
 	initBinom();
 
 	//Iterate up to max dimension of simplex, starting at dim 2 (edges)
 	for(unsigned d = 1; d <= dim; d++){
 
 		//Check if we need to break from expanding dimensions (no more edges)
-		if(this->simplexList.size() < d) break;
-		if(this->simplexList.size() == d) this->simplexList.push_back({});
+		if(simplexList.size() < d) break;
+		if(simplexList.size() == d) simplexList.push_back({});
 
 		//Iterate through each element in the current dimension's edges
-		for(auto it = this->simplexList[d-1].begin(); it != this->simplexList[d-1].end(); it++){
+		for(auto it = simplexList[d-1].begin(); it != simplexList[d-1].end(); it++){
 			//Iterate over points to possibly add to the simplex
 			//Use points larger than the maximal vertex in the simplex to prevent double counting
 			unsigned minPt = *(*it)->simplex.rbegin() + 1;
 
-			for(unsigned pt = minPt; pt < this->simplexList[0].size(); pt++){
+			for(unsigned pt = minPt; pt < simplexList[0].size(); pt++){
 				//Compute the weight using all edges
 				double maxWeight = (*it)->weight;
-				for(auto i : (*it)->simplex) maxWeight = std::max(maxWeight, (*this->distMatrix)[i][pt]);
-			
-//***************************For beta complex valid simplex Condition ****************************			
-            bool valid = true;
-           
-            if(this->complexType == "alphaComplex"){
-                  for(auto i : (*it)->simplex) 
-						if(!(*this->incidenceMatrix)[i][pt]){
-						   valid = false;
-						   break;
-					   }
-            if(valid){
-					std::shared_ptr<nodeType> tot = std::make_shared<nodeType>(nodeType((*it)->simplex, maxWeight));
+				for(auto i : (*it)->simplex) maxWeight = std::max(maxWeight, (*distMatrix)[i][pt]);
+
+				if(maxWeight <= maxEpsilon){ //Valid simplex
+					simplexNode_P tot = std::make_shared<simplexNode>(simplexNode((*it)->simplex, maxWeight));
 					tot->simplex.insert(pt);
 					tot->hash = (*it)->hash + bin.binom(pt, tot->simplex.size());
-					this->simplexList[d].insert(tot);
-			}
-//************************************************************************************************
-			}else if(maxWeight <= this->maxEpsilon){ //Valid simplex
-					std::shared_ptr<nodeType> tot = std::make_shared<nodeType>(nodeType((*it)->simplex, maxWeight));
-					tot->simplex.insert(pt);
-					tot->hash = (*it)->hash + bin.binom(pt, tot->simplex.size());
-					this->simplexList[d].insert(tot);
+					simplexList[d].insert(tot);
 				}
 			}
 		}
 	}
-for(int d=1;d<dim;d++){
-std::ofstream out("incedenceMatrix"+std::to_string(d)+".csv");
-out<<"Count of "<<d<<"-simplex ::"<<this->simplexList[d].size()<<"\n";
+}
 
-std::vector<std::vector<unsigned>> edges(this->simplexList[1].size(),std::vector<unsigned>(this->simplexList[1].size(),0));
-for(auto x : this->simplexList[d]){
-	std::vector<unsigned> edge;
-	for(auto y : x->simplex)
-		edge.push_back(y);
-	for(int i =0;i<=d;i++)
-		for(int j=i+1;j<=d;j++)
-			edges[edge[i]][edge[j]] = 1;
+void simplexArrayList::graphInducedComplex(int dim,std::vector<std::vector<double>> inputData,double beta){
+	initBinom();
+	bool intersection;
+	kdTree tree(inputData, inputData.size()); //KDTree for efficient nearest neighbor search
+    if(beta < 1){
+		intersection = true;
+		beta = 1/beta;
 	}
+	else
+		intersection = false;
 
 
-for (auto row : edges) {
-  for (auto col : row)
-    out << col <<' ';
-  out << '\n';
-}
-}
-}
 
-template<typename nodeType>
-std::vector<std::shared_ptr<nodeType>> simplexArrayList<nodeType>::expandDimension(std::vector<std::shared_ptr<nodeType>> edges, bool recordVertices, unsigned dim){
-	std::vector<std::shared_ptr<nodeType>> nextEdges;
+	//Iterate up to max dimension of simplex, starting at dim 2 (edges)
+	for(unsigned d = 1; d <= dim; d++){
+
+		//Check if we need to break from expanding dimensions (no more edges)
+		if(simplexList.size() < d) break;
+		if(simplexList.size() == d) simplexList.push_back({});
+
+		//Iterate through each element in the current dimension's edges
+		for(auto it = simplexList[d-1].begin(); it != simplexList[d-1].end(); it++){
+			//Iterate over points to possibly add to the simplex
+			//Use points larger than the maximal vertex in the simplex to prevent double counting
+			unsigned minPt = *(*it)->simplex.rbegin() + 1;
+
+			for(unsigned pt = minPt; pt < simplexList[0].size(); pt++){
+		    std::set<unsigned> simplex = (*it)->simplex;
+            simplex.insert(pt);
+            std::vector<double> circumCenter;
+
+            if(simplex.size()>2)
+				circumCenter = utils::circumCenter(simplex,inputData);
+			else if(simplex.size()==2){
+ 				auto first = simplex.begin();
+				std::vector<double> R;
+				std::vector<double> A = inputData[*first];
+      			std::advance(first, 1);
+				std::vector<double> B = inputData[*first];
+	   			std::transform(A.begin(), A.end(), B.begin(), std::back_inserter(R),[](double e1,double e2){return ((e1+e2)/2);});
+				circumCenter = R;
+   			 }
+			double circumRadius = utils::circumRadius(simplex,distMatrix);
+			std::vector<double> hpcoff = utils::nullSpaceOfMatrix(simplex,inputData,circumCenter,sqrt(circumRadius));
+			std::vector<std::vector<double>> betaCenters = utils::betaCentersCalculation(hpcoff, beta, sqrt(circumRadius),circumCenter);
+			double betaRadius = beta*sqrt(circumRadius);
+			double volume = utils::simplexVolume(simplex,distMatrix,inputData[0].size());
+
+		    std::vector<size_t> neighbors1 = tree.neighborhoodIndices(betaCenters[0], betaRadius + .05); //All neighbors in epsilon-ball
+    		std::vector<size_t> neighbors2 = tree.neighborhoodIndices(betaCenters[1], betaRadius + .05); //All neighbors in epsilon-ball
+            std::vector<size_t> neighbors;
+            if(intersection == true){
+				std::vector<size_t> v(std::min(neighbors1.size(),neighbors2.size()));
+				std::vector<size_t>::iterator it;
+				std::sort (neighbors1.begin(),neighbors1.end());
+				std::sort (neighbors2.begin(),neighbors2.end()); 
+				it=std::set_intersection (neighbors1.begin(), neighbors1.end(), neighbors2.begin(), neighbors2.end(), v.begin());
+				v.resize(it-v.begin()); 
+				neighbors = v;				
+			}
+			else{
+				std::vector<size_t> v(neighbors1.size() + neighbors2.size());
+				std::vector<size_t>::iterator it;	
+				std::sort (neighbors1.begin(),neighbors1.end());
+				std::sort (neighbors2.begin(),neighbors2.end()); 
+				it=std::set_union (neighbors1.begin(), neighbors1.end(), neighbors2.begin(), neighbors2.end(), v.begin());
+				v.resize(it-v.begin()); 
+				neighbors = v;
+			}
+			if(neighbors.size() > simplex.size()){
+					simplexNode_P tot = std::make_shared<simplexNode>(simplexNode((*it)->simplex, betaRadius));
+					tot->simplex.insert(pt);
+					tot->hash = (*it)->hash + bin.binom(pt, tot->simplex.size());
+					tot->circumCenter = circumCenter;	
+					tot->circumRadius = circumRadius;	
+					tot->betaCenters = betaCenters;
+					tot->betaRadius = betaRadius;
+					tot->hpcoff = hpcoff;
+					tot->volume = volume;
+					simplexList[d].insert(tot);   //insert simplex into complex
+				}
+			}
+		}
+	}
+}
+*/
+std::vector<std::vector<simplexNode_P>> simplexArrayList::expandDimension(std::vector<std::vector<simplexNode_P>> edges, bool recordVertices, unsigned dim){
+	std::vector<std::vector<simplexNode_P>> nextEdges;
+
 	//Iterate through each element in the current dimension's edges
-	for(auto it = edges.begin(); it != edges.end(); it++){
+	for(int count = 0; count < edges.size(); count++){
+	  std::vector<simplexNode_P> nextEdgescluster;
+	for(auto it = edges[count].begin(); it != edges[count].end(); it++){
 		std::set<unsigned> vertices;
-
-		if(recordVertices) vertices = (*it)->simplex;
-		else vertices = getVertices((*it)->hash, dim - 1, this->simplexList[0].size());
+        
+		//if(recordVertices) 
+		vertices = (*it)->simplex;
+		//else vertices = getVertices((*it)->hash, dim - 1, simplexList[0].size());
 
 		//Iterate over points to possibly add to the simplex
 		//Use points larger than the maximal vertex in the simplex to prevent double counting
 		unsigned minPt = *vertices.rbegin() + 1;
-
-		for(unsigned pt = minPt; pt < this->simplexList[0].size(); pt++){
+		for(unsigned pt = minPt; pt < simplexList[0][0].size(); pt++){
 			//Compute the weight using all edges
 			double maxWeight = (*it)->weight;
-			for(auto i : vertices) maxWeight = std::max(maxWeight, (*this->distMatrix)[i][pt]);
-			
-//***************************For beta complex valid simplex Condition ****************************			
-            bool valid = true;
-            if(this->complexType == "alphaComplex"){
-                  for(auto i : vertices) 
-						if(!(*this->incidenceMatrix)[i][pt]){
-						   valid = false;
-						   break;
-					   }
-            if(valid){
-				std::shared_ptr<nodeType> tot = std::make_shared<nodeType>(nodeType());
-				if(recordVertices){
-					tot->simplex = vertices;
-					tot->simplex.insert(pt);
-				}
+			for(auto i : vertices) maxWeight = std::max(maxWeight, (*distMatrix)[i][pt]);
+
+			if(maxWeight <= maxEpsilon){ //Valid simplex
+				simplexNode_P tot = std::make_shared<simplexNode>(simplexNode());
+				tot->simplex = vertices;
+				tot->simplex.insert(pt);
 				tot->weight = maxWeight;
-				tot->hash = (*it)->hash + bin.binom(pt, (recordVertices ? tot->simplex.size() : dim + 1));
-				nextEdges.push_back(tot);
-			}
-//************************************************************************************************
-			}else if(maxWeight <= this->maxEpsilon){ //Valid simplex
-				std::shared_ptr<nodeType> tot = std::make_shared<nodeType>(nodeType());
-				if(recordVertices){
-					tot->simplex = vertices;
-					tot->simplex.insert(pt);
-				}
-				tot->weight = maxWeight;
-				tot->hash = (*it)->hash + bin.binom(pt, (recordVertices ? tot->simplex.size() : dim + 1));
-				nextEdges.push_back(tot);
+				tot->hash = (*it)->hash + bin.binom(pt,tot->simplex.size());
+				nextEdgescluster.push_back(tot);
 			}
 		}
+	  }
+	nextEdges.push_back(nextEdgescluster);
 	}
-std::cout<<"my name is Rohit";
-std::ofstream out("incedenceMatrix"+std::to_string(dim)+".csv");
-out<<"Count of "<<dim<<"-simplex ::"<<nextEdges.size()<<"\n";
-
-std::vector<std::vector<unsigned>> edgesi(nextEdges.size(),std::vector<unsigned>(nextEdges.size(),0));
-for(auto x : nextEdges){
-	std::vector<unsigned> edge;
-	for(auto y : x->simplex)
-		edge.push_back(y);
-	for(int i =0;i<=dim;i++)
-		for(int j=i+1;j<=dim;j++)
-			edgesi[edge[i]][edge[j]] = 1;
-	}
-
-
-for (auto row : edgesi) {
-  for (auto col : row)
-    out << col <<' ';
-  out << '\n';
-}
-	if(recordVertices) std::sort(nextEdges.begin(), nextEdges.end(), cmpByWeight<std::shared_ptr<nodeType>>());
+	//if(recordVertices) std::sort(nextEdges.begin(), nextEdges.end(), cmpByWeight());
 	return nextEdges;
 }
+/*
+void simplexArrayList::reduceComplex(){
 
-template<typename nodeType>
-bool simplexArrayList<nodeType>::deletion(std::set<unsigned> vector){
+	//Start with the largest dimension
+	ut.writeDebug("simplexArrayList","Reducing complex, starting simplex count: " + std::to_string(simplexCount()));
+	if(simplexList.size() == 0){
+		return;
+	}
+
+	for(auto i = simplexList.size()-1; i > 1; i--){
+
+		std::vector<std::set<unsigned>> removals;
+		std::vector<std::set<unsigned>> checked;
+		std::vector<unsigned> currentSimplex;
+
+		while(checked.size() != simplexList[i].size()){
+			for(auto l : simplexList[i]){
+				if(std::find(checked.begin(),checked.end(),l->simplex) == checked.end()){
+					auto ret = recurseReduce(l, removals, checked);
+					removals = ret.first;
+					checked = ret.second;
+				}
+			}
+		}
+
+		//Remove the removals
+		for(auto rem : removals){
+			deletion(rem);
+		}
+
+	}
+
+	ut.writeDebug("simplexArrayList","Finished reducing complex, reduced simplex count: " + std::to_string(simplexCount()));
+
+	return;
+}
+//std::vector<double> :; simplexArrayList:: simplexHyperplane(std::set<unsigned> simplex,std::vector<std::vector<double>> inputData){
+
+//}
+
+void simplexArrayList:: buildAlphaComplex(std::vector<std::vector<int>> dsimplexmesh, int npts,std::vector<std::vector<double>> inputData){
+	unsigned maxDimension = dsimplexmesh[0].size()-1;
+	bin = binomialTable(npts,maxDimension+1);
+	for(int i=0;i<=maxDimension;i++)
+		simplexList.push_back({});
+
+	for(auto simplex : dsimplexmesh){
+		unsigned int pow_set_size = pow(2, simplex.size());
+		for(int counter =1;counter<pow_set_size;counter++){
+			double weight =0;
+			std::set<unsigned> gensimp;
+			for(int j=0;j<simplex.size();j++){
+				if(counter & (1<<j)){
+					unsigned indnew;
+					indnew = *(std::next(simplex.begin(),j));
+					for(auto x:gensimp){
+						if(x<indnew){
+							if(weight<(*distMatrix)[x][indnew])
+								weight = (*distMatrix)[x][indnew];
+						}
+						else if(weight<(*distMatrix)[indnew][x])
+							weight = (*distMatrix)[indnew][x];
+					}
+					gensimp.insert(indnew);
+				}
+			}
+			//overwriting for Alpha
+			double weight1;
+			if(gensimp.size()>1)
+	      			weight1 = utils::circumRadius(gensimp,distMatrix);
+   			else
+		        	weight1 = weight/2;
+
+			simplexNode_P tot = std::make_shared<simplexNode>(simplexNode(gensimp,weight1));
+		
+			if(gensimp.size()>1)
+				tot->circumRadius = utils::circumRadius(gensimp,distMatrix);
+			else{
+		    		tot->circumRadius = weight/2;
+			}
+			if(gensimp.size()>2)
+				tot->circumCenter = utils::circumCenter(gensimp,inputData);
+			else if(gensimp.size()==2){
+ 				auto first = gensimp.begin();
+				std::vector<double> R;
+				std::vector<double> A = inputData[*first];
+      				std::advance(first, 1);
+				std::vector<double> B = inputData[*first];
+	   			std::transform(A.begin(), A.end(), B.begin(), std::back_inserter(R),[](double e1,double e2){return ((e1+e2)/2);});
+				  tot->circumCenter = R;
+   			 }
+			else
+   				tot->circumCenter = inputData[*(gensimp.begin())];
+			if(gensimp.size()==1)
+				tot->hash = *(gensimp.begin());
+			else
+				tot->hash = simplexHash(gensimp);
+			simplexList[gensimp.size()-1].insert(tot);
+			gensimp.clear();
+		}
+	}
+
+	//ALPHA COMPLEX FILTERTION BASED on FOLLOWING algorithm
+	/*Filtration value computation algorithm
+
+
+	for i : dimension →0 do
+	   for all σ of dimension i
+	        if filtration(σ) is NaN then
+	            filtration(σ)=α2(σ)
+	        end if
+        	for all τ face of σ do            // propagate alpha filtration value
+        	  if  filtration(τ) is not NaN then
+        	       filtration(τ) = min( filtration(τ), filtration(σ) )
+        	  else
+        	     if τ is not Gabriel for σ then
+        	       filtration(τ) = filtration(σ)
+        	  end if
+       	    end if
+  	   end for
+ 	 end for
+	end for
+
+	make_filtration_non_decreasing()
+	prune_above_filtration()
+
+        */
+
+/*	for(int dim = simplexList.size()-1;dim>=0;dim--){
+	   for(auto simplexiter = simplexList[dim].rbegin();simplexiter != simplexList[dim].rend();simplexiter++){
+       		   simplexNode_P simplex = (*simplexiter);
+  	           if(simplex->filterationvalue ==-1)
+		           simplex->filterationvalue = simplex->circumRadius;
+		   if(dim>0){
+			   for(auto face :simplexList[dim-1]){
+				   bool gabriel = true;
+				   std::vector<unsigned> points_check(simplex->simplex.size());
+				   std::vector<unsigned> guilty_points_check;
+				   std::vector<unsigned> :: iterator it;
+				   std::vector<unsigned> v(face->simplex.size());
+				   it = std::set_intersection(simplex->simplex.begin(),simplex->simplex.end(),face->simplex.begin(),face->simplex.end(),v.begin());
+				   v.resize(it-v.begin());
+				   if(v.size() == face->simplex.size()){
+		      			   if(face->filterationvalue !=-1)
+						   face->filterationvalue = std::min(face->filterationvalue ,simplex->filterationvalue);				
+	  				   else {
+						   std::vector<unsigned>::iterator it;											
+						   it=std::set_difference (simplex->simplex.begin(), simplex->simplex.end(), face->simplex.begin(), face->simplex.end(), points_check.begin());
+						   points_check.resize(it-points_check.begin());
+						   for(it = points_check.begin(); it !=points_check.end();++it){
+							   std::vector<double> coordinates;
+			       				   for(int i =0;i<face->circumCenter.size();i++)
+								   coordinates.push_back(inputData[*it][i]);						
+						   	   double distance = utils::vectors_distance(coordinates,face->circumCenter);
+							   if(pow(distance,2)<face->circumRadius)	
+								   gabriel = false;
+							   guilty_points_check.push_back((*it));
+						   }
+					   }
+				   }
+				   if(!gabriel){
+				  	 std::vector<unsigned> v(simplex->simplex.size());
+				  	 std::vector<unsigned>::iterator it;
+				 	  it=std::set_union (face->simplex.begin(), face->simplex.end(), guilty_points_check.begin(), guilty_points_check.end(), v.begin());
+					   v.resize(it-v.begin());
+					   for(auto face1 :simplexList[v.size()-1]){
+						   std::vector<unsigned> v1(simplex->simplex.size());
+						   it = std::set_intersection(v.begin(),v.end(),face1->simplex.begin(),face1->simplex.end(),v1.begin());
+						   v1.resize(it-v1.begin());
+						   if(v1.size() == face1->simplex.size())
+							   face->filterationvalue = face1->filterationvalue;
+					   }
+				   }
+			   }
+		   }
+		}
+	}
+	//Reinserting to sort by filterationvalue and remove simplexes with weight greater than alphafilteration value (maxEpsilon)
+	std::vector<std::set<simplexNode_P, cmpByWeight>> simplexList1;		//Holds ordered list of simplices in each dimension
+	for(int dim=0;dim < simplexList.size();dim++){
+		simplexList1.push_back({});
+	   	for(auto simplex :simplexList[dim]){
+			 if(simplex->filterationvalue <= alphaFilterationValue){ //Valid Simplex after filteration
+				 simplex->weight = simplex->filterationvalue;
+				 simplexList1[dim].insert(simplex);
+			 }
+		}
+	}
+	simplexList = simplexList1;
+	return;
+}
+
+
+
+std::pair<std::vector<std::set<unsigned>>, std::vector<std::set<unsigned>>> simplexArrayList::recurseReduce(simplexNode_P simplex, std::vector<std::set<unsigned>> removals, std::vector<std::set<unsigned>> checked){
+	checked.push_back(simplex->simplex);
+	auto subsets = ut.getSubsets(simplex->simplex);
+	std::set<unsigned> maxFace;
+
+	bool canRemove = true;
+
+	//Look at each face
+	for(auto face : subsets){
+
+		//Check if the face is shared; if so, recurse
+		for(auto simp : simplexList[simplex->simplex.size() - 1]){
+
+			if(simp != simplex && std::find(checked.begin(), checked.end(), simp->simplex) == checked.end()){
+				auto sDiff = ut.symmetricDiff(simp->simplex, face,true);
+
+				//This point intersects;
+				if (sDiff.size() == 1){
+					auto ret = recurseReduce(simp, removals, checked);
+					removals = ret.first;
+					checked = ret.second;
+
+					//Check if the simplex was not removed
+					if(std::find(removals.begin(), removals.end(), simp->simplex) == removals.end()){
+						canRemove = false;
+						break;
+					}
+				}
+
+			}
+		}
+
+		//Check if the face is the max face
+		double wt = -1;
+		//if((wt = findWeight(face)) == simplex->weight){
+		//	maxFace = face;
+		//}
+
+	}
+
+	if(canRemove){
+		removals.push_back(simplex->simplex);
+		removals.push_back(maxFace);
+	}
+
+	return std::make_pair(removals, checked);
+
+}
+
+bool simplexArrayList::deletion(std::set<unsigned> vector){
 	//Search the weighted graph from the size of the vector
-	for(auto simplexSetIter = this->simplexList[vector.size() - 1].begin(); simplexSetIter != this->simplexList[vector.size() - 1].end(); simplexSetIter++){
+	for(auto simplexSetIter = simplexList[vector.size() - 1].begin(); simplexSetIter != simplexList[vector.size() - 1].end(); simplexSetIter++){
 		if((*simplexSetIter)->simplex == vector){
-			this->simplexList[vector.size() - 1].erase(simplexSetIter);
+			simplexList[vector.size() - 1].erase(simplexSetIter);
 			return true;
 		}
 	}
 	return false;
 }
-
-template<typename nodeType>
-simplexArrayList<nodeType>::~simplexArrayList(){
-	this->simplexList.clear();
+*/
+simplexArrayList::~simplexArrayList(){
+	simplexList.clear();
 }
-
-//Explicit Template Class Instantiation
-template class simplexArrayList<simplexNode>;
-template class simplexArrayList<alphaNode>;
-template class simplexArrayList<witnessNode>;

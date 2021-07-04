@@ -3,16 +3,15 @@
 // Header file for distMatrixPipe class - see distMatrixPipe.cpp for descriptions
 #include <map>
 #include "basePipe.hpp"
+#include "utils.hpp"
 
-template<typename nodeType>
-class distMatrixPipe : public basePipe<nodeType> {
+class distMatrixPipe : public basePipe {
   private:
 	double enclosingRadius;
-	double beta;
-	std::string betaMode = "lune";
   public:
     distMatrixPipe();
-    void runPipe(pipePacket<nodeType>& inData);
+    void runPipe(pipePacket& inData);
     bool configPipe(std::map<std::string, std::string> &configMap);
-	void outputData(pipePacket<nodeType>&);
+	void outputData(pipePacket&);
 };
+

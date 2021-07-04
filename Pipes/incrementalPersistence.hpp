@@ -1,4 +1,4 @@
-#pragma once
+	#pragma once
 
 // Header file for bettiPipe class - see bettiPipe.cpp for descriptions
 #include <map>
@@ -8,8 +8,7 @@
 #include "simplexBase.hpp"
 #include "utils.hpp"
 
-template <typename nodeType>
-class incrementalPersistence : public basePipe<nodeType> {
+class incrementalPersistence : public basePipe {
 	private:
 		int shift = 0;
 		unsigned nPts = 0;
@@ -39,17 +38,15 @@ class incrementalPersistence : public basePipe<nodeType> {
 				}
 			}
 		};
-		
-		
-		typedef std::shared_ptr<nodeType> templateNode_P;
 
 	public:
 		int dim;
 	    incrementalPersistence();
-	    void runPipe(pipePacket<nodeType> &inData);
+	    void runPipe(pipePacket &inData);
 	    bool configPipe(std::map<std::string, std::string> &configMap);
-		void outputData(pipePacket<nodeType>&);
+		void outputData(pipePacket&);
 
-		template <typename simplexNodePointer, typename comp>
-		std::vector<simplexNodePointer> incrementalByDimension(pipePacket<nodeType>&, std::vector<simplexNodePointer>&, std::vector<simplexNodePointer> pivots, unsigned, comp, std::string, bool);
+		template <class simplexNodePointer, class comp>
+		std::vector<simplexNodePointer> incrementalByDimension(pipePacket&, std::vector<simplexNodePointer>&, std::vector<simplexNodePointer> pivots, unsigned, comp, std::string, bool);
 };
+

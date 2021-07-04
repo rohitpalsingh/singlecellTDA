@@ -5,27 +5,24 @@
 #include "pipePacket.hpp"
 
 // pipePacket constructor, currently no needed information for the class constructor
-template<typename nodeType>
-pipePacket<nodeType>::pipePacket(const std::string& simplexType, const double epsilon, const int maxDim){
+pipePacket::pipePacket(const std::string& simplexType, const double epsilon, const int maxDim){
 	std::map<std::string,std::string> blankConfig;
 	blankConfig["dimensions"] = std::to_string(maxDim);
 	blankConfig["epsilon"] = std::to_string(epsilon);
 	
 	if(complex != nullptr)
 		delete complex;
-	complex = simplexBase<nodeType>::newSimplex(simplexType, blankConfig);
+	complex = simplexBase::newSimplex(simplexType, blankConfig);
 }
 
-template<typename nodeType>
-pipePacket<nodeType>::pipePacket(std::map<std::string, std::string> configMap, const std::string& simplexType){
+pipePacket::pipePacket(std::map<std::string, std::string> configMap, const std::string& simplexType){
 	
 	if(complex != nullptr)
 		delete complex;
-	complex = simplexBase<nodeType>::newSimplex(simplexType, configMap);
+	complex = simplexBase::newSimplex(simplexType, configMap);
 }
 
-template<typename nodeType>
-std::string pipePacket<nodeType>::getStats(){
+std::string pipePacket::getStats(){
 	std::string ret;
 	ret += std::to_string(inputData.size()) + ",";
 	ret += std::to_string(complex->simplexCount());
@@ -33,8 +30,7 @@ std::string pipePacket<nodeType>::getStats(){
 	return ret;
 }
 
-template<typename nodeType>
-double pipePacket<nodeType>::getSize(){
+double pipePacket::getSize(){
 	size_t size = 0;
 	
 	//1. Calculate size of original data
@@ -81,7 +77,3 @@ double pipePacket<nodeType>::getSize(){
 	return size;
 }
 
-//Explicit Template Class Instantiation
-template class pipePacket<simplexNode>;
-template class pipePacket<alphaNode>;
-template class pipePacket<witnessNode>;
