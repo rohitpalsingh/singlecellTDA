@@ -45,6 +45,7 @@ void distMatrixPipe<nodeType>::runPipe(pipePacket<nodeType> &inData){
 				file<<0<<" ";
 				
 		}
+		file<<"\n";
 	}
 	file.close();
 

@@ -109,7 +109,8 @@ void argParser::setPipeline(std::map<std::string, std::string>& args){
 	//Configure the base pipeline from the complex storage type
 	std::string basePipeline;
 
-	basePipeline = "distMatrix.neighGraph.incrementalPersistence";
+	basePipeline = "distMatrix";
+	//:.neighGraph.incrementalPersistence";
     args["pipeline"] = basePipeline;
 /*
 

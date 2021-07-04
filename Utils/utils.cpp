@@ -797,9 +797,10 @@ double utils::vectors_distanceSparse(const std::vector<dataNode>& a,const std::v
 	
 	if(b.size() == 0)
 		return 0;
-		
-	while(itra!=a.end() || itrb!=b.end()){
+
+	while(itra!=a.end() && itrb!=b.end()){
 		if(itra->geneID == itrb->geneID){
+
 			temp.push_back(pow((itra->expression -itrb->expression),2));
 			itra++;
 			itrb++;
@@ -823,8 +824,7 @@ double utils::vectors_distanceSparse(const std::vector<dataNode>& a,const std::v
 	    temp.push_back(pow(itrb->expression,2));
 		itrb++;
 	}
- 
-	return sqrt(std::accumulate(temp.begin(), temp.end(), 0.0));
+  	return sqrt(std::accumulate(temp.begin(), temp.end(), 0.0));
 }
 
 

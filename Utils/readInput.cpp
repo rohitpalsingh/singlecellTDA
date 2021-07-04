@@ -35,14 +35,14 @@ std::vector<std::vector<dataNode>> readInput::readSingleCellCSV(std::string file
 	std::vector<std::vector<dataNode>> result;
 	
 	std::ifstream file1(matrixfilename);
-	std::ifstream file2(matrixmetadata);
-	std::ifstream file3(matrixfeatures);
+//	std::ifstream file2(matrixmetadata);
+//	std::ifstream file3(matrixfeatures);
 	
 	if(!file1){
 		std::cout << "Failed to open data file: " << matrixfilename << std::endl;
 		return result;
 	}
-	
+/*	
 	if(!file2){
 		std::cout << "Failed to open metadata file: " << matrixmetadata << std::endl;
 		return result;
@@ -52,7 +52,7 @@ std::vector<std::vector<dataNode>> readInput::readSingleCellCSV(std::string file
 		std::cout << "Failed to open features file: " << matrixfeatures << std::endl;
 		return result;
 	}
-	// We are going to iterate through each line of the file until we reach the end
+*/	// We are going to iterate through each line of the file until we reach the end
 	int count = 0;
 	while(!file1.eof()){
 		std::string line;			// Temporary (current) line
@@ -62,6 +62,7 @@ std::vector<std::vector<dataNode>> readInput::readSingleCellCSV(std::string file
 			if(parseDoubleSparseVector(line, tmp)){
 				result.push_back(tmp);
 			}
+		std::cout<<"input "<<count<<"\n";
 	    count++;	
 	}
 	
