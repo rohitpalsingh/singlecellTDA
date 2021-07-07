@@ -60,6 +60,8 @@ void LHF::runPipeline(std::map<std::string, std::string> args, pipePacket &wD){
 
 			//Check if the pipe was created and configure
 			if (cp != 0 && cp->configPipe(args)){
+				std::cout<<curFunct<<" ";
+		
 				//Run the pipe function (wrapper)
 				cp->runPipeWrapper(wD);
 			}

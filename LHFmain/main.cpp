@@ -59,9 +59,10 @@ int main(int argc, char* argv[]){
 /* 
 	if(args["pipeline"] != "slidingwindow" && args["pipeline"] != "naivewindow" && args["mode"] != "mpi"){
 		//Read data from inputFile CSV
-*/int k;	
-	wD.inputData = rs.readSingleCellCSV(args["inputFile"]);
+*/  
+	    wD.inputData = rs.readSingleCellCSV(args["inputFile"]);
 		wD.workData = wD.inputData;
+ 
 /*	}
 
 	//If data was found in the inputFile

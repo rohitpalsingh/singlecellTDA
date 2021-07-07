@@ -26,13 +26,13 @@ distMatrixPipe::distMatrixPipe(){
 
 // runPipe -> Run the configured functions of this pipeline segment
 void distMatrixPipe::runPipe(pipePacket &inData){
-	 std::ofstream file("mouseDMafterread.csv");
+	 std::ofstream file("mouseDMCorrected.csv");
 	//Store our distance matrix
 	
 	if(inData.distMatrix.size() > 0) inData.distMatrix.clear();
-	inData.distMatrix.resize(inData.workData.size(), std::vector<double>(inData.workData.size(),0));
-	//auto rs = readInput();
-	//inData.distMatrix = rs.readMAT("mouseDM.csv");
+	   inData.distMatrix.resize(inData.workData.size(), std::vector<double>(inData.workData.size(),0));
+	auto rs = readInput();
+//	inData.distMatrix = rs.readMAT("../mouseDM.csv");
 	//Iterate through each vector, create lower
 	for(unsigned i = 0; i < inData.inputData.size(); i++){
 		//Grab a second vector to compare to 
@@ -43,8 +43,7 @@ void distMatrixPipe::runPipe(pipePacket &inData){
 
 				  inData.distMatrix[i][j] = distance;
 				  file<<distance<<" ";
-			}else
-	     		file<<0<<" ";
+			}
 				
 		}
 		file<<"\n";

@@ -99,7 +99,7 @@ std::vector<std::vector<dataNode>> readInput::readSingleCellCSV(std::string file
 bool readInput::parseDoubleSparseVector(std::string line, std::vector<dataNode> &row){
 	std::size_t pos = std::string::npos;
 	//std::cout<<line<<"\n";
-	unsigned count = 0;
+	unsigned count = -1;
 	// Replace whitespace in the current line
 	line = std::regex_replace(line, std::regex(" "), "");
 	// Check if the line has a length (is not a blank line)
@@ -110,7 +110,8 @@ bool readInput::parseDoubleSparseVector(std::string line, std::vector<dataNode> 
 			double num = std::stod(line.substr(0,pos));
 			// Push the value found before the comma, remove from the line
 			if(num !=0){
-				row.push_back(dataNode(count,num));
+				if(count!=-1)
+					row.push_back(dataNode(count,num));
 			//	std::cout<<count<<" "<<num<<" ";
 			}
 			line.erase(0,pos + 1);
@@ -176,7 +177,7 @@ bool readInput::parseDoubleVector(std::string line, std::vector<double> &row){
 // TODO: A lot
 std::vector<std::vector<double>> readInput::readMAT(std::string filename){
 	std::vector<std::vector<double>> result;
-	int vectors = 32;
+	int vectors = 95658;
 	int dimensions = 1;
 	
 	std::ifstream file;
@@ -196,13 +197,14 @@ std::vector<std::vector<double>> readInput::readMAT(std::string filename){
 		dimensions = std::stoi(line);
 	} else return result;
 	*/
+
 	// We are going to iterate through each line of the file until we reach the end
 	for(int vect = 0; vect < vectors; vect++){
 		std::vector<double> tmp;	//Temporary (current) vector
 		
 		for(int dim = 0; dim < dimensions; dim++){
 			getline(file, line);		//Read the next line from file
-
+            std::cout<<line<<" ";
 			std::size_t pos = std::string::npos;
 
 			// Replace whitespace in the current line

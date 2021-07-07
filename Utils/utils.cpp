@@ -603,7 +603,6 @@ double utils::vectors_distanceSparse(const std::vector<dataNode>& a,const std::v
 			temp.push_back(pow((itra->expression -itrb->expression),2));
 			itra++;
 			itrb++;
-		
 		}else if(itra->geneID < itrb->geneID){
 		   temp.push_back(pow(itra->expression,2));
 		   itra++;
