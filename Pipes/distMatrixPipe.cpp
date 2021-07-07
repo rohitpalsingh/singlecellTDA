@@ -31,7 +31,7 @@ void distMatrixPipe::runPipe(pipePacket &inData){
 	
 	if(inData.distMatrix.size() > 0) inData.distMatrix.clear();
 	   inData.distMatrix.resize(inData.workData.size(), std::vector<double>(inData.workData.size(),0));
-	auto rs = readInput();
+//	auto rs = readInput();
 //	inData.distMatrix = rs.readMAT("../mouseDM.csv");
 	//Iterate through each vector, create lower
 	for(unsigned i = 0; i < inData.inputData.size(); i++){
@@ -43,7 +43,8 @@ void distMatrixPipe::runPipe(pipePacket &inData){
 
 				  inData.distMatrix[i][j] = distance;
 				  file<<distance<<" ";
-			}
+			}else
+	     		file<<0<<" ";
 				
 		}
 		file<<"\n";
