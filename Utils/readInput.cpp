@@ -160,6 +160,82 @@ bool readInput::parseDoubleVector(std::string line, std::vector<double> &row){
 }
 
 
+
+bool readInput::parseStringVector(std::string line, std::vector<std::string> &row){
+	std::size_t pos = std::string::npos;
+	
+	// Replace whitespace in the current line
+	line = std::regex_replace(line, std::regex(" "), "");
+        bool firstColumn = true;
+	// Check if the line has a length (is not a blank line)
+	if(line.size() > 1){
+			
+		// Iterate through each comma of the csv
+		while((pos = line.find_first_of(",")) != std::string::npos){
+			// Push the value found before the comma, remove from the line
+			if(!firstColumn)
+				row.push_back(line.substr(0,pos));
+			line.erase(0,pos + 1);
+			firstColumn = false;	
+		}
+		// Get the last value of the line
+		if(line.size() > 0)
+			row.push_back(line.substr(0,pos));
+	} else
+		return false;
+	
+	return true;
+	
+}
+std::vector<std::vector<std::string>> readInput:: readMetaData(std::string filename){
+	std::ifstream file(filename);
+        std::vector<std::vector<std::string>> result;
+	if(!file){
+		std::cout << "Failed to open metaData file: " << filename << std::endl;
+		return result;
+	}
+	// We are going to iterate through each line of the file until we reach the end
+	int count = 0;
+	while(!file.eof()){
+		std::string line;			// Temporary (current) line
+		std::vector<std::string> tmp;	// Temporary (current) vector
+		getline(file, line);		// Read the next line from file
+		if(count !=0)
+			if(parseStringVector(line, tmp)){
+				result.push_back(tmp);
+			}
+	//	std::cout<<"input "<<count<<"\n";
+	    count++;	
+	}
+	
+	return result;
+}
+
+std::vector<std::vector<std::string>> readInput :: readFeatures(std::string filename){
+
+	std::ifstream file(filename);
+        std::vector<std::vector<std::string>> result;
+	if(!file){
+		std::cout << "Failed to open features file: " << filename << std::endl;
+		return result;
+	}
+	// We are going to iterate through each line of the file until we reach the end
+	int count = 0;
+	while(!file.eof()){
+		std::string line;			// Temporary (current) line
+		std::vector<std::string> tmp;	// Temporary (current) vector
+		getline(file, line);		// Read the next line from file
+		if(count !=0)
+			if(parseStringVector(line, tmp)){
+				result.push_back(tmp);
+			}
+	//	std::cout<<"input "<<count<<"\n";
+	    count++;	
+	}
+	
+	return result;
+}
+
 // readMAT -> read in a mat formatted file from file input
 //		-filename - complete filename and relative path (if needed) for reading
 // 
@@ -201,10 +277,15 @@ std::vector<std::vector<double>> readInput::readMAT(std::string filename){
 	// We are going to iterate through each line of the file until we reach the end
 	for(int vect = 0; vect < vectors; vect++){
 		std::vector<double> tmp;	//Temporary (current) vector
-		
+		int kl;
+	/*	if(vect%10000==0){
+			std::cout<<vect<<" ";
+			std::cin>>kl;
+		}
+	*/	
 		for(int dim = 0; dim < dimensions; dim++){
 			getline(file, line);		//Read the next line from file
-            std::cout<<line<<" ";
+            	
 			std::size_t pos = std::string::npos;
 
 			// Replace whitespace in the current line

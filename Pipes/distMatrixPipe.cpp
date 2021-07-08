@@ -26,14 +26,17 @@ distMatrixPipe::distMatrixPipe(){
 
 // runPipe -> Run the configured functions of this pipeline segment
 void distMatrixPipe::runPipe(pipePacket &inData){
-	 std::ofstream file("mouseDMCorrected.csv");
+//	 std::ofstream file("mouseDM.csv");
 	//Store our distance matrix
 	
 	if(inData.distMatrix.size() > 0) inData.distMatrix.clear();
-	   inData.distMatrix.resize(inData.workData.size(), std::vector<double>(inData.workData.size(),0));
-//	auto rs = readInput();
-//	inData.distMatrix = rs.readMAT("../mouseDM.csv");
-	//Iterate through each vector, create lower
+//	   inData.distMatrix.resize(inData.workData.size(), std::vector<double>(inData.workData.size(),0));
+	auto rs = readInput();
+	std::cout<<"Reading Matrix";
+	int kl;
+	std::cin>>kl;
+	inData.distMatrix = rs.readMAT("mouseDMCorrected.csv");
+/*	//Iterate through each vector, create lower
 	for(unsigned i = 0; i < inData.inputData.size(); i++){
 		//Grab a second vector to compare to 
 		for(unsigned j = 0; j < inData.inputData.size(); j++){
@@ -51,7 +54,7 @@ void distMatrixPipe::runPipe(pipePacket &inData){
 	}
 	file.close();
 
-/*
+
 	for(unsigned i = 0; i < inData.workData.size(); i++){
 		double r_i = 0;
 		for(unsigned j = 0; j < inData.workData.size(); j++) r_i = std::max(r_i, inData.distMatrix[std::min(i, j)][std::max(i, j)]);
@@ -62,6 +65,81 @@ void distMatrixPipe::runPipe(pipePacket &inData){
 				inData.incidenceMatrix = this->ut.betaNeighbors(inData.inputData,beta,betaMode);
 */
 	inData.complex->setDistanceMatrix(&inData.distMatrix);
+	
+	//Creating Separate Distance Matrices for diffrent time stamps, Lineages, types
+	
+	
+                std::set<std::string> time;
+                std::set<std::string> type;
+                std::set<std::string> lineage;
+		for(auto x : inData.metaData){
+			time.insert(x[19]);
+			lineage.insert(x[32]);
+			type.insert(x[33]);
+		}
+	        
+		for(auto y :time){
+		       	std::vector<unsigned> indices;
+			unsigned count =0;
+			for(auto x:inData.metaData){
+				if(x[19]==y)
+					indices.push_back(count);
+				count++;
+			}
+
+		        std::ofstream file("mouseTimeDM"+y+".csv");
+			for(auto x:indices){
+               			file<<x<<",";
+				for(auto y:indices){
+					file<<inData.distMatrix[x][y]<<",";
+				}
+				file<<"\n";
+			}
+			file.close();
+                }
+
+
+		for(auto y :type){
+		       	std::vector<unsigned> indices;
+			unsigned count =0;
+			for(auto x:inData.metaData){
+				if(x[33]==y)
+					indices.push_back(count);
+				count++;
+			}
+
+		        std::ofstream file("mouseTypeDM"+y+".csv");
+			for(auto x:indices){
+               			file<<x<<",";
+				for(auto y:indices){
+					file<<inData.distMatrix[x][y]<<",";
+				}
+				file<<"\n";
+			}
+			file.close();
+		}
+
+
+		for(auto y :lineage){
+		       	std::vector<unsigned> indices;
+			unsigned count =0;
+			for(auto x:inData.metaData){
+				if(x[32]==y)
+					indices.push_back(count);
+				count++;
+			}
+
+		        std::ofstream file("mouseLineageDM"+y+".csv");
+			for(auto x:indices){
+               			file<<x<<",";
+				for(auto y:indices){
+					file<<inData.distMatrix[x][y]<<",";
+				}
+				file<<"\n";
+			}
+			file.close();
+		}
+
 //	inData.complex->setEnclosingRadius(enclosingRadius);
 //	inData.complex->setIncidenceMatrix(&inData.incidenceMatrix);
 

@@ -60,9 +60,28 @@ int main(int argc, char* argv[]){
 	if(args["pipeline"] != "slidingwindow" && args["pipeline"] != "naivewindow" && args["mode"] != "mpi"){
 		//Read data from inputFile CSV
 */  
-	    wD.inputData = rs.readSingleCellCSV(args["inputFile"]);
-		wD.workData = wD.inputData;
- 
+          	wD.metaData = rs.readMetaData(args["inputFile"]+"_MetaData.csv");
+		std::cout<<wD.metaData[0][19]<<" ";
+		std::cout<<wD.metaData[0][32]<<" ";
+		std::cout<<wD.metaData[0][33]<<" ";
+       /*         std::set<std::string> time;
+                std::set<std::string> type;
+                std::set<std::string> lineage;
+		for(auto x : wD.metaData){
+			time.insert(x[19]);
+			lineage.insert(x[32]);
+			type.insert(x[33]);
+		}
+		for(auto y :time)
+			std::cout<<y<<" ";
+		std::cout<<"\n";
+		for(auto y :type)
+			std::cout<<y<<" ";
+		std::cout<<"\n";
+		for(auto y :lineage)
+			std::cout<<y<<" ";
+	*/	wD.features = rs.readFeatures(args["inputFile"]+"_Features_Var.csv"); 
+		std::cout<<wD.features[0][0]<<" ";
 /*	}
 
 	//If data was found in the inputFile

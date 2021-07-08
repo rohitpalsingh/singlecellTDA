@@ -219,7 +219,10 @@ void incrementalPersistence::runPipe(pipePacket &inData){
 		}
 
 		//Check if we've filled our MST and can break
-		if(mstSize >= edges12.size()-1) break;
+		if(mstSize >= edges12.size()-1){
+			std::cout<<(*edgeIter)->weight;
+			break;
+		}
 	}
 
 	// std::cout << "mappedIndices.size = " << mappedIndices.size() << '\n';
@@ -231,6 +234,20 @@ void incrementalPersistence::runPipe(pipePacket &inData){
 			inData.bettiTable.push_back(des);
 		}
 	}
+	double maxGap=0;
+	double epsilonstart,epsilonend;
+        std::sort(inData.bettiTable.begin(),inData.bettiTable.end(),[](bettiBoundaryTableEntry a, bettiBoundaryTableEntry b){return a.death<b.death;});
+
+	for(unsigned  i=0;  i< inData.bettiTable.size()-1;i++)
+		if((inData.bettiTable[i+1].death - inData.bettiTable[i].death)>maxGap){
+		     maxGap =   inData.bettiTable[i+1].death - inData.bettiTable[i].death;
+		     epsilonstart = inData.bettiTable[i].death;
+		     epsilonend = inData.bettiTable[i+1].death;
+		}
+		     std::cout<<"\n "<<epsilonstart<<" "<<epsilonend;
+			
+
+
 
 	//For higher dimensional persistence intervals
 	//

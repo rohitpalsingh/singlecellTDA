@@ -18,9 +18,9 @@ class pipePacket {
 	std::string stats;
 	std::string runLog;
 	
-    std::vector<std::string> time;
-    std::vector<std::string> lineage;
-    std::vector<std::string> type;
+	std::vector<std::vector<std::string>> features;
+    	std::vector<std::vector<std::string>> metaData;
+   
     std::vector<std::vector<dataNode>> workData;
 	std::vector<unsigned> centroidLabels;
 	std::vector<std::vector<dataNode>> inputData;
